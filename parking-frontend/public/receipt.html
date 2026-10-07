@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Parking Invoice</title>
+
+<!-- PDF LIBRARY -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial;
+    background: linear-gradient(to right, #1e3c72, #2a5298);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* INVOICE BOX */
+.invoice-box {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    width: 450px;
+    box-shadow: 0px 10px 30px rgba(0,0,0,0.3);
+}
+
+/* HEADER */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.company {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2a5298;
+}
+
+.invoice-title {
+    text-align: right;
+}
+
+.invoice-title h2 {
+    margin: 0;
+    color: #2a5298;
+}
+
+.meta {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #555;
+}
+
+/* CUSTOMER */
+.customer {
+    margin-top: 20px;
+}
+
+/* TABLE */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.table th {
+    background: #2a5298;
+    color: white;
+    padding: 10px;
+}
+
+.table td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* TOTAL */
+.total {
+    text-align: right;
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: 15px;
+    color: green;
+}
+
+/* FOOTER */
+.footer {
+    margin-top: 20px;
+    font-size: 12px;
+    text-align: center;
+    color: #777;
+}
+
+/* BUTTONS */
+.button-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    background: #2a5298;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1e3c72;
+}
+
+/* HIDE IN PDF */
+.no-print {
+    display: block;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="invoice-box" id="receipt">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="company">🚗 Smart Parking</div>
+        <div class="invoice-title">
+            <h2>INVOICE</h2>
+            <div id="invoiceNo"></div>
+        </div>
+    </div>
+
+    <!-- META -->
+    <div class="meta" id="dateTime"></div>
+
+    <!-- CUSTOMER -->
+    <div class="customer">
+        <p id="name"></p>
+    </div>
+
+    <!-- TABLE -->
+    <div id="tableContainer"></div>
+
+    <!-- TOTAL -->
+    <div class="total" id="total"></div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        Thank you for choosing Smart Parking 🚀
+    </div>
+
+    <!-- BUTTONS -->
+    <div class="button-container no-print">
+        <button onclick="goHome()">Done</button>
+        <button onclick="downloadReceipt()">Download PDF</button>
+    </div>
+
+</div>
+
+<script>
+let name = localStorage.getItem("name");
+let bookings = JSON.parse(localStorage.getItem("bookings"));
+
+/* DATE + INVOICE */
+let now = new Date();
+let invoiceNo = "INV-" + Math.floor(Math.random() * 100000);
+document.getElementById("invoiceNo").innerHTML = invoiceNo;
+document.getElementById("dateTime").innerHTML = now.toLocaleString();
+
+/* NAME */
+document.getElementById("name").innerHTML = "<b>Customer:</b> " + name;
+
+/* TABLE */
+let table = `
+<table class="table">
+<tr>
+<th>Slot</th>
+<th>Vehicle</th>
+<th>Hours</th>
+<th>Cost</th>
+</tr>
+`;
+
+let total = 0;
+
+bookings.forEach((b) => {
+
+    let vehicleType = "Car";
+
+    if (b.slot.startsWith("A")) vehicleType = "Car";
+    else if (b.slot.startsWith("B")) vehicleType = "Bike";
+    else if (b.slot.startsWith("C")) vehicleType = "Truck";
+
+    let cost = b.hours * 50;
+    total += cost;
+
+    table += `
+    <tr>
+        <td>${b.slot}</td>
+        <td>${vehicleType}</td>
+        <td>${b.hours}</td>
+        <td>₹${cost}</td>
+    </tr>
+    `;
+});
+
+table += "</table>";
+
+document.getElementById("tableContainer").innerHTML = table;
+document.getElementById("total").innerHTML = "Total: ₹" + total;
+
+/* HOME */
+function goHome() {
+    window.location.href = "/";
+}
+
+/* DOWNLOAD */
+function downloadReceipt() {
+    const element = document.getElementById("receipt");
+    const buttons = document.querySelector(".no-print");
+
+    buttons.style.display = "none";
+
+    const opt = {
+        margin: 0.5,
+        filename: 'SmartParking_Invoice.pdf',
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        buttons.style.display = "flex";
+    });
+}
+</script>
+
+</body>
+</html>
